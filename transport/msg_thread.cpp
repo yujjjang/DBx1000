@@ -20,6 +20,10 @@ void MessageThread::init(uint64_t thd_id) {
     buffer[n]->reset(n);
   }
   _thd_id = thd_id;
+  head_qry = NULL;
+  head_start = 0;
+  head_type = NO_MSG;
+  head_dest = UINT64_MAX;
 }
 
 void MessageThread::run() {
@@ -30,15 +34,29 @@ void MessageThread::run() {
   mbuf * sbuf;
   uint64_t startptr;
   uint64_t sthd_prof_start = get_sys_clock();
-  uint64_t head_start;
 
-  uint64_t curr_time = get_sys_clock();
   if(!head_qry)
-    head_start = msg_queue.dequeue(head_qry,head_type,head_dest);
+    head_start = msg_queue.dequeue(head_qry,head_type,head_dest,head_tid);
+  uint64_t curr_time = get_sys_clock();
   if(g_network_delay == 0 || (head_type == NO_MSG || !head_qry) ||
       ((head_type != NO_MSG) && 
        ((curr_time - head_start >= g_network_delay)  || ISCLIENTN(head_dest) || ISCLIENT))) {
       //printf("Sending %f, %ld, %f\n",((float)g_network_delay)/BILLION,head_start,((float)(curr_time - head_start))/BILLION);
+      if(head_type != NO_MSG && !ISCLIENT && head_start > 0) {
+        if(head_tid == UINT64_MAX)
+          head_tid = 100;
+        if(ISCLIENTN(head_dest)) {
+          //printf("Cl Dly %ld:   %f\n",head_tid,(float)(curr_time - head_start) / BILLION);
+          INC_STATS(0,msg_dly_cl,curr_time - head_start);
+          INC_STATS(0,msg_cnt_cl,1);
+        } else {
+          //printf("Serv Dly %ld: %f\n",head_tid,(float)(curr_time - head_start) / BILLION);
+          INC_STATS(0,msg_dly_serv,curr_time - head_start);
+          INC_STATS(0,msg_cnt_serv,1);
+        }
+      }
+      assert(head_type == NO_MSG || (head_dest < g_node_cnt + g_client_node_cnt));
+      assert(head_type <= NO_MSG);
       qry = head_qry;
       type = head_type;
       dest = head_dest;

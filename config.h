@@ -6,10 +6,10 @@
 // Simulation + Hardware
 /***********************************************/
 #define NODE_CNT 16
-#define THREAD_CNT 6
+#define THREAD_CNT 1
 #define REM_THREAD_CNT 1
 #define SEND_THREAD_CNT 1
-#define CORE_CNT 8
+#define CORE_CNT 64
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT NODE_CNT
@@ -62,15 +62,15 @@
 /***********************************************/
 // Message Passing
 /***********************************************/
-#define TPORT_TYPE "tcp"
-#define TPORT_TYPE_IPC false
-#define TPORT_PORT 17000
-#define SET_AFINITY false
+#define TPORT_TYPE "ipc"
+#define TPORT_TYPE_IPC true
+#define TPORT_PORT "_.ipc"
+#define SET_AFFINITY false
 
 #define MAX_TPORT_NAME 128
 #define MSG_SIZE 128 // in bytes
 #define HEADER_SIZE sizeof(uint32_t)*2 // in bits 
-#define MSG_TIMEOUT 5000000000UL // in ns
+#define MSG_TIMEOUT 5000000000UL // in ns -> 5s
 #define NETWORK_TEST false
 #define NETWORK_DELAY 0UL
 
@@ -85,7 +85,7 @@
 // Concurrency Control
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HSTORE, HSTORE_SPEC, VOLTDB, OCC, VLL, CALVIN
-#define CC_ALG CALVIN
+#define CC_ALG NO_WAIT
 
 // all transactions acquire tuples according to the primary key order.
 #define KEY_ORDER         false
@@ -159,7 +159,7 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 8
-#define SYNTH_TABLE_SIZE 2097152*8
+#define SYNTH_TABLE_SIZE 2056
 #define ZIPF_THETA 0.6
 #define TXN_WRITE_PERC 0.5
 #define TUP_WRITE_PERC 0.5
@@ -261,7 +261,7 @@ extern TestCases          g_test_case;
 // SIMPLE Immediately send OK back to client
 // NOCC Don't do CC
 // NORMAL normal operation
-#define MODE NORMAL_MODE
+#define MODE QRY_ONLY_MODE
 
 
 /***********************************************/
@@ -307,9 +307,11 @@ extern TestCases          g_test_case;
 
 // Stats and timeout
 #define BILLION 1000000000UL // in ns => 1 second
+#define MILLION 1000000UL // in ns => 1 millisecond
+#define THOUSAND 1000UL // in ns => 1 microsecond
 #define STAT_ARR_SIZE 1024
 #define PROG_TIMER 10 * BILLION // in s
-#define BATCH_TIMER 10000000
+#define BATCH_TIMER 1 * MILLION
 #define DONE_TIMER 1 * 60 * BILLION // ~2 minutes
 
 #define SEED 0

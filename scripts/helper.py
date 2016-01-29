@@ -214,6 +214,9 @@ stat_map = {
  'time_seq_prep':[],
  'time_seq_ack':[],
 
+ 'mdly_cl':[],
+ 'mdly_serv':[],
+
 'sthd_prof_1a':[],
 'sthd_prof_2':[],
 'sthd_prof_3':[],
@@ -858,6 +861,8 @@ def get_summary_stats(stats,summary,summary_cl,summary_sq,x,v,cc):
     sk['wq_cnt'] = avg(summary['wq_cnt'])
     sk['new_wq_cnt'] = avg(summary['new_wq_cnt'])
     sk['aq_cnt'] = avg(summary['aq_cnt'])
+    sk['mdly_cl'] = avg(summary['mdly_cl'])
+    sk['mdly_serv'] = avg(summary['mdly_serv'])
     sk['wq_enqueue'] = avg(summary['wq_enqueue'])
     sk['wq_dequeue'] = avg(summary['wq_dequeue'])
     sk['new_wq_enqueue'] = avg(summary['new_wq_enqueue'])
@@ -968,6 +973,8 @@ def write_summary_file(fname,stats,x_vals,v_vals):
     'wq_cnt',
     'new_wq_cnt',
     'aq_cnt',
+    'mdly_cl',
+    'mdly_serv',
     'wq_enqueue',
     'wq_dequeue',
     'new_wq_enqueue',

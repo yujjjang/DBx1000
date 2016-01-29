@@ -69,6 +69,7 @@ private:
   base_query * head_qry;
   RemReqType head_type;
   uint64_t head_dest;
+  uint64_t head_tid;
   uint64_t head_start;
 
 };

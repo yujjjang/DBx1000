@@ -37,7 +37,8 @@ SHORTNAMES = {
 }
 
 #config_names=["CLIENT_NODE_CNT","NODE_CNT","MAX_TXN_PER_PART","WORKLOAD","CC_ALG","MPR","CLIENT_THREAD_CNT","CLIENT_REM_THREAD_CNT","CLIENT_SEND_THREAD_CNT","THREAD_CNT","REM_THREAD_CNT","SEND_THREAD_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","TXN_WRITE_PERC","TUP_WRITE_PERC","PART_PER_TXN","PART_CNT","MSG_TIME_LIMIT","MSG_SIZE_MAX","MODE","DATA_PERC","ACCESS_PERC","REQ_PER_QUERY"]
-fmt_title=["NODE_CNT","CC_ALG","ACCESS_PERC","TXN_WRITE_PERC","PERC_PAYMENT","MPR","MODE","MAX_TXN_IN_FLIGHT"]
+#fmt_title=["NODE_CNT","CC_ALG","ACCESS_PERC","TXN_WRITE_PERC","PERC_PAYMENT","MPR","MODE","MAX_TXN_IN_FLIGHT","THREAD_CNT"]
+fmt_title=["NODE_CNT","CC_ALG","MODE","THREAD_CNT"]
 
 ##############################
 # SIGMOD PAPER PLOTS
@@ -524,10 +525,14 @@ def ft_mode_plot(summary,summary_client,summary_seq):
     v_name = "CC_ALG"
     tput_setup(summary,summary_seq,nfmt,nexp,x_name,v_name)
 
+
 def test_plot(summary,summary_client,summary_seq):
     nfmt,nexp = test()
+
+    line_setup(summary,summary_client,nfmt,nexp,x_name="NETWORK_DELAY",v_name="CC_ALG",key='mdly_serv')
+
 #    tput_setup(summary,summary_client,nfmt,nexp,x_name="MAX_TXN_IN_FLIGHT",v_name="MODE")
-    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NODE_CNT",v_name="MODE",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT','PART_PER_TXN':'NODE_CNT','NUM_WH':128,'PERC_PAYMENT':0.0})
+#    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NODE_CNT",v_name="MODE",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT','PART_PER_TXN':'NODE_CNT','NUM_WH':128,'PERC_PAYMENT':0.0})
 #    tput_setup(summary,summary_client,nfmt,nexp,x_name="NODE_CNT",v_name="ZIPF_THETA")
 #    tput_setup(summary,summary_client,nfmt,nexp,x_name="NODE_CNT",v_name="CC_ALG")
 #    tput_setup(summary,summary_client,nfmt,nexp,x_name="NODE_CNT",v_name="MPR")
@@ -612,20 +617,38 @@ def test_plot(summary,summary_client,summary_seq):
 def network_sweep():
     wl = 'YCSB'
     nalgos=['NO_WAIT','WAIT_DIE','OCC','MVCC','TIMESTAMP','CALVIN']
-#    nalgos=['NO_WAIT','MVCC','OCC']
-    ndelay=[0,2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000]#,32000,34000,36000,38000,40000,42000,44000,46000,48000,50000]#,22000,24000,26000,28000,30000,40000,50000,60000,70000,80000,90000,100000]
+    nalgos=['MVCC','OCC','CALVIN']
+    nalgos=['NO_WAIT']
+    nmodes = ["NORMAL_MODE","NOCC_MODE","QRY_ONLY_MODE"]
+    nmodes = ["NORMAL_MODE","QRY_ONLY_MODE"]
+    nmodes = ["QRY_ONLY_MODE"]
+#nmodes = ["NORMAL_MODE"]
+#    ntif = [50000,100000]
+    ntif = [50000,10000,150000,200000,250000,300000]
+    ntif = [50000]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.75,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,47.5,50]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.75,2.5,5,7.5,10,12.5,15,17.5,20,25,30,35,40,45,50]
+    ndelay=[0,0.05,0.1,0.25,0.5,0.75,1]
+    ndelay=[0,0.05,0.1,0.5,1,1.5]
+    ndelay=[0,0.1,1]
+    ndelay=[0]
     ndelay = [n*1000000 for n in ndelay]
-    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY"]
-    exp = [[wl,8,cc,2,d,"false"] for d,cc in itertools.product(ndelay,nalgos)]
+    nthr = [1,2,3,4]#,5,6]
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY","CORE_CNT"]
+#    exp = [[wl,8,cc,2,d,"false"] for d,cc in itertools.product(ndelay,nalgos)]
+#    fmt = ["WORKLOAD","NODE_CNT","CLIENT_NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY"]
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY","CORE_CNT","ACCESS_PERC","MODE","MAX_TXN_IN_FLIGHT","THREAD_CNT"]
+    exp = [[wl,2,cc,2,d,"false",64,0,m,t,thr] for d,cc,m,t,thr in itertools.product(ndelay,nalgos,nmodes,ntif,nthr)]
     return fmt,exp
 
 def network_sweep_plot(summary,summary_client,summary_seq):
     from helper import plot_prep
     from plot_helper import tput
     nfmt,nexp = network_sweep()
-    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="CC_ALG",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT'},logscalex=True)
+    line_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",key='mdly_serv')
+#    line_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",key='mdly_serv',extras={"MODE":"NORMAL_MODE"})
+#    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT',"MODE":"NORMAL_MODE"})
+    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT'})
 
 def network_experiment():
     fmt_nt = ["NODE_CNT","CLIENT_NODE_CNT","NETWORK_TEST"]
@@ -849,7 +872,7 @@ experiment_map = {
 # Default values for variable configurations
 configs = {
     "NODE_CNT" : 16,
-    "THREAD_CNT": 6,
+    "THREAD_CNT": 1,#6,
     "REM_THREAD_CNT": 1,
     "SEND_THREAD_CNT": 1,
     "CLIENT_NODE_CNT" : "NODE_CNT",
@@ -868,7 +891,7 @@ configs = {
     "MAX_TXN_IN_FLIGHT": 50000,
     "NETWORK_DELAY": '0UL',
     "DONE_TIMER": "1 * 60 * BILLION // ~2 minutes",
-    "BATCH_TIMER" : "10000000",
+    "BATCH_TIMER" : "1 * MILLION", # 10 * MILLION
     "PROG_TIMER" : "10 * BILLION // in s",
     "NETWORK_TEST" : "false",
     "ABORT_PENALTY": "1 * 1000000UL   // in ns.",
@@ -886,7 +909,7 @@ configs = {
     "ACCESS_PERC":0.03,
     "DATA_PERC": 100,
     "REQ_PER_QUERY": 10, #16
-    "SYNTH_TABLE_SIZE":"2097152*8",
+    "SYNTH_TABLE_SIZE": "2056",#"2097152*8",
 #TPCC
     "NUM_WH": 'PART_CNT',
     "PERC_PAYMENT":0.0,

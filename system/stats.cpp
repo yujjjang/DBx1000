@@ -219,12 +219,18 @@ void Stats_thd::clear() {
   owned_cnt_rd = 0;
   owned_cnt_wr = 0;
 
+  msg_cnt_serv = 0;
+  msg_cnt_cl = 0;
+  msg_dly_serv = 0;
+  msg_dly_cl = 0;
+
   prof_time_twopc = 0;
   prof_cc_rel_abort = 0;
   prof_cc_rel_commit = 0;
   thd_prof_get_txn_cnt = 0;
   rthd_prof_1=0; rthd_prof_2=0;
   sthd_prof_1a=0; sthd_prof_1b=0; sthd_prof_2=0; sthd_prof_3=0; sthd_prof_4=0; sthd_prof_5a=0; sthd_prof_5b=0;
+  sthd_prof_thd=0;
   thd_prof_thd1=0; thd_prof_thd2=0; thd_prof_thd3=0;
   thd_prof_thd1a=0; thd_prof_thd1b=0; thd_prof_thd1c=0; thd_prof_thd1d=0;
   thd_prof_thd2_loc=0; thd_prof_thd2_rem=0;
@@ -472,7 +478,7 @@ void Stats::print_client(bool prog) {
 		total_tot_run_time = total_tot_run_time / g_client_thread_cnt;
 	for (uint64_t tid = g_client_thread_cnt; tid < g_client_thread_cnt + g_client_send_thread_cnt; tid ++) {
   printf(
-      "sthd_prof_1a=%f,sthd_prof_2=%f,sthd_prof_3=%f,sthd_prof_4=%f,sthd_prof_5a=%f,sthd_prof_1b=%f,sthd_prof_5b=%f\n"
+      "sthd_prof_1a=%f,sthd_prof_2=%f,sthd_prof_3=%f,sthd_prof_4=%f,sthd_prof_5a=%f,sthd_prof_1b=%f,sthd_prof_5b=%f,sthd_prof_thd=%f\n"
       ,_stats[tid]->sthd_prof_1a / BILLION
       ,_stats[tid]->sthd_prof_2 / BILLION
        ,_stats[tid]->sthd_prof_3 / BILLION
@@ -480,6 +486,7 @@ void Stats::print_client(bool prog) {
        ,_stats[tid]->sthd_prof_5a / BILLION
       ,_stats[tid]->sthd_prof_1b / BILLION
        ,_stats[tid]->sthd_prof_5b / BILLION
+       ,_stats[tid]->sthd_prof_thd / BILLION
       );
   }
 	for (uint64_t tid = g_client_thread_cnt+g_client_send_thread_cnt; tid < g_client_thread_cnt + g_client_send_thread_cnt + g_client_rem_thread_cnt; tid ++) {
@@ -748,6 +755,10 @@ void Stats::print(bool prog) {
   uint64_t total_rack = 0;
   uint64_t total_qry_cnt = 0;
 
+  double total_msg_dly_cl = 0;
+  double total_msg_dly_serv = 0;
+  uint64_t total_msg_cnt_cl = 0;
+  uint64_t total_msg_cnt_serv = 0;
   uint64_t limit;
   if(g_node_id < g_node_cnt)
     limit =  g_thread_cnt + g_rem_thread_cnt;
@@ -883,6 +894,10 @@ void Stats::print(bool prog) {
  total_new_wq_enqueue+= _stats[tid]->new_wq_enqueue;
  total_new_wq_dequeue+= _stats[tid]->new_wq_dequeue;
 
+ total_msg_dly_cl += _stats[tid]->msg_dly_cl;
+ total_msg_dly_serv += _stats[tid]->msg_dly_serv;
+ total_msg_cnt_serv += _stats[tid]->msg_cnt_serv;
+ total_msg_cnt_cl += _stats[tid]->msg_cnt_cl;
   for(uint64_t i = 0; i < g_part_cnt; i++) {
     total_part_cnt[i] += _stats[tid]->part_cnt[i];
     total_part_acc[i] += _stats[tid]->part_acc[i];
@@ -1131,6 +1146,9 @@ void Stats::print(bool prog) {
       ",rem_wq_cnt=%ld"
       ",new_wq_cnt=%ld"
       ",aq_cnt=%ld"
+      //",mq_cnt=%ld"
+      ",mdly_cl=%f"
+      ",mdly_serv=%f"
       ,total_spec_abort_cnt
       ,total_spec_commit_cnt
 			,total_time_abort / BILLION
@@ -1158,7 +1176,11 @@ void Stats::print(bool prog) {
       ,work_queue.get_wq_cnt()
       ,work_queue.get_rem_wq_cnt()
       ,work_queue.get_new_wq_cnt()
-      ,abort_queue.get_abrt_cnt());
+      ,abort_queue.get_abrt_cnt()
+      //,msg_queue.get_cnt()
+      ,total_msg_dly_cl / BILLION / total_msg_cnt_cl
+      ,total_msg_dly_serv / BILLION / total_msg_cnt_serv
+      );
 	fprintf(outf, 
   ",txn_time_begintxn=%f"
   ",txn_time_begintxn2=%f"
@@ -1426,6 +1448,7 @@ void Stats::print_prof(FILE * outf) {
   double total_sthd_prof_5a = 0;
   double total_sthd_prof_1b = 0;
   double total_sthd_prof_5b = 0;
+  double total_sthd_prof_thd = 0;
   double total_rthd_prof_1 = 0;
   double total_rthd_prof_2 = 0;
   double total_thd_prof_sum = 0;
@@ -1513,6 +1536,7 @@ void Stats::print_prof(FILE * outf) {
        total_sthd_prof_5a +=_stats[tid]->sthd_prof_5a;
       total_sthd_prof_1b +=_stats[tid]->sthd_prof_1b;
        total_sthd_prof_5b +=_stats[tid]->sthd_prof_5b;
+       total_sthd_prof_thd +=_stats[tid]->sthd_prof_thd;
   }
 	for (uint64_t tid = g_thread_cnt+g_send_thread_cnt; tid < g_thread_cnt + g_send_thread_cnt + g_rem_thread_cnt; tid ++) {
       total_rthd_prof_1 +=_stats[tid]->rthd_prof_1;
@@ -1606,7 +1630,7 @@ void Stats::print_prof(FILE * outf) {
   }
 
     fprintf(outf,
-        ",sthd_prof_1a=%f,sthd_prof_2=%f,sthd_prof_3=%f,sthd_prof_4=%f,sthd_prof_5a=%f,sthd_prof_1b=%f,sthd_prof_5b=%f"
+        ",sthd_prof_1a=%f,sthd_prof_2=%f,sthd_prof_3=%f,sthd_prof_4=%f,sthd_prof_5a=%f,sthd_prof_1b=%f,sthd_prof_5b=%f,sthd_prof_thd=%f"
         ",rthd_prof_1=%f,rthd_prof_2=%f"
         ",thd1=%f,thd2=%f,thd3=%f,thd_sum=%f"
         ",thd1a=%f,thd1b=%f,thd1c=%f,thd1d=%f"
@@ -1637,6 +1661,7 @@ void Stats::print_prof(FILE * outf) {
   ,total_sthd_prof_5a /BILLION/g_send_thread_cnt
   ,total_sthd_prof_1b /BILLION/g_send_thread_cnt
   ,total_sthd_prof_5b /BILLION/g_send_thread_cnt
+  ,total_sthd_prof_thd /BILLION/g_send_thread_cnt
   ,total_rthd_prof_1 /BILLION/g_rem_thread_cnt
   ,total_rthd_prof_2 /BILLION/g_rem_thread_cnt
         ,total_thd_prof_thd1 /BILLION/g_thread_cnt

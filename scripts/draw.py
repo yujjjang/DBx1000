@@ -362,7 +362,7 @@ def draw_line(fname, data, xticks,
         ylab='Throughput', logscale=False, 
         logscalex = False,
         ylimit=0, xlimit=None, xlab='Number of Cores',
-        legend=False, linenames = None, figsize=(23/3, 10/3), styles=None,ltitle=''
+        legend=True, linenames = None, figsize=(23/3, 10/3), styles=None,ltitle=''
         ,base=2) :
 
     if len(xticks) <= 6:

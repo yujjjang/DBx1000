@@ -104,6 +104,7 @@ UInt32 g_client_send_thread_cnt = CLIENT_SEND_THREAD_CNT;
 UInt32 g_servers_per_client = 0;
 UInt32 g_clients_per_server = 0;
 UInt32 g_server_start_node = 0;
+UInt64 g_starttime = 0;
 
 UInt32 g_max_txn_per_part = MAX_TXN_PER_PART;
 UInt32 g_network_delay = NETWORK_DELAY;

@@ -226,6 +226,14 @@ def line_general(xval,vval,summary,summary_cl,
 
 #    bbox = [0.7,0.9]
     bbox = [1.0,0.95]
+    if xname == 'ACCESS_PERC':
+        _xval = [int(x*100) for x in _xval]
+    if xname == 'NETWORK_DELAY':
+        _xval = [float(x)/1000000 for x in _xval]
+        base = 10
+    if xname == 'MAX_TXN_IN_FLIGHT':
+        _xval = [float(x)*nnodes/100000 for x in _xval]
+
     print("Created plot {}".format(name))
     draw_line(name,data,_xval,ylab='',xlab=_xlab,title=_title,bbox=bbox,ncol=2,ltitle=vname,ylimit=ylimit) 
 
@@ -301,7 +309,8 @@ def tput(xval,vval,summary,summary_cl,summary_sq,
         ylimit=0,
         logscale=False,
         logscalex=False,
-        legend=False,
+#        legend=False,
+        legend=True,
         ):
     global plot_cnt
     tpt = {}

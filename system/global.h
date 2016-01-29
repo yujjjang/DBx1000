@@ -114,6 +114,7 @@ extern UInt32 g_server_start_node;
 /******************************************/
 // Global Parameter
 /******************************************/
+extern UInt64 g_starttime;
 extern bool g_part_alloc;
 extern bool g_mem_pad;
 extern bool g_prt_lat_distr;

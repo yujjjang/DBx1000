@@ -287,9 +287,11 @@ void Transport::send_msg(uint64_t sid, uint64_t dest_id, void * sbuf,int size) {
 	//int rc= s[idx].sock.send(&sbuf,NN_MSG,0);
   //nn_freemsg(sbuf);
 
-  INC_STATS(_thd_id,time_tport_send,get_sys_clock() - starttime);
+  uint64_t endtime = get_sys_clock();
+  INC_STATS(_thd_id,time_tport_send,endtime - starttime);
 	INC_STATS(_thd_id,msg_sent_cnt,1);
 	INC_STATS(_thd_id,msg_bytes,size);
+  //printf("Send Msg: -> %ld, %d: %f\n",dest_id,size,(float)(endtime-starttime)/BILLION);
 }
 
 void Transport::send_msg(uint64_t dest_id, void ** data, int * sizes, int num) {

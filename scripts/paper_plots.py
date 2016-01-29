@@ -247,10 +247,10 @@ def ppr_network_plot(summary,summary_cl,summary_seq):
     from plot_helper import tput
     nfmt,nexp = network_sweep()
     v_name = "CC_ALG"
+#v_name = "MODE"
     x_name = "NETWORK_DELAY"
     extras = {'CLIENT_NODE_CNT':'NODE_CNT','PART_CNT':'NODE_CNT'}
     x_vals,v_vals,fmt,exp,lst = plot_prep(nexp,nfmt,x_name,v_name)
 #    x_vals = [float(v)/1000 for v in x_vals]
     tput(x_vals,v_vals,summary,summary_cl,summary_seq,cfg_fmt=fmt,cfg=list(exp),xname=x_name,vname=v_name,title="",name="tput_network",xlab="Network Latency (ms)",logscalex=True)
-
 

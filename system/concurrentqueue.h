@@ -967,6 +967,27 @@ public:
     return inner_enqueue_bulk<CannotAlloc>(token, std::forward<It>(itemFirst), count);
   }
   
+  // Added by Rachael Harding
+  // FIXME: Hacky, requires caller to have an exact knowledge of # of enqueuers
+  // Attempts to dequeue from the queue in round robin order (?).
+  // Returns false if all producer streams appeared empty at the time they
+  // were checked (so, the queue is likely but not guaranteed to be empty).
+  // Never allocates. Thread-safe.
+  template<typename U>
+  bool try_dequeue_rr(int i, U& item)
+  {
+    int j = 0;
+    for (auto ptr = producerListTail.load(std::memory_order_acquire); ptr != nullptr; ptr = ptr->next_prod()) {
+      if(j < i) {
+        j++;
+        continue;
+      }
+      if (ptr->dequeue(item)) {
+        return true;
+      }
+    }
+    return false;
+  }
   
   
   // Attempts to dequeue from the queue.

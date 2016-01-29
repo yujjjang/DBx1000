@@ -91,11 +91,16 @@ public:
   double owned_cnt_wr;
   double owned_cnt_rd;
 
+  double msg_dly_serv;
+  double msg_dly_cl;
+  uint64_t msg_cnt_serv;
+  uint64_t msg_cnt_cl;
+
   uint64_t *part_cnt;
   uint64_t *part_acc;
   double prof_time_twopc;
   double prof_cc_rel_abort, prof_cc_rel_commit;
-  double sthd_prof_1a,sthd_prof_1b, sthd_prof_2, sthd_prof_3, sthd_prof_4, sthd_prof_5a, sthd_prof_5b;
+  double sthd_prof_1a,sthd_prof_1b, sthd_prof_2, sthd_prof_3, sthd_prof_4, sthd_prof_5a, sthd_prof_5b, sthd_prof_thd;
   double rthd_prof_1, rthd_prof_2;
   double thd_prof_thd1, thd_prof_thd2, thd_prof_thd3;
   double thd_prof_thd1a, thd_prof_thd1b, thd_prof_thd1c, thd_prof_thd1d;
