@@ -461,7 +461,7 @@ def line_setup(summary,summary_cl,summary_seq,nfmt,nexp,x_name,v_name,key
             title+="{} {}, ".format(t,e[fmt.index(t)])
         line_general(x_vals,v_vals,summary,summary_cl,key,cfg_fmt=fmt,cfg=list(e),xname=x_name,vname=v_name,title=title,extras=extras)
         
-def stacks_setup(summary,summary_seq,nfmt,nexp,x_name,keys,key_names=[],norm=False
+def stacks_setup(summary,nfmt,nexp,x_name,keys,key_names=[],norm=False
         ,extras={}
         ):
     from plot_helper import stacks_general
@@ -488,7 +488,7 @@ def stacks_setup(summary,summary_seq,nfmt,nexp,x_name,keys,key_names=[],norm=Fal
         for t in fmt_title:
             if t not in fmt: continue
             title+="{} {}, ".format(t,e[fmt.index(t)])
-        stacks_general(x_vals,summary,list(keys),xname=x_name,key_names=list(key_names),title=title,cfg_fmt=fmt,cfg=list(e),extras=extras)
+        stacks_general(x_vals,summary,list(keys),xname=x_name,key_names=list(key_names),title=title,cfg_fmt=fmt,cfg=list(e),extras=extras,normalized=norm)
 
 def breakdown_setup(summary,summary_seq,nfmt,nexp,x_name,key_names=[],norm=False
         ,extras={}
@@ -618,27 +618,26 @@ def network_sweep():
     wl = 'YCSB'
     nalgos=['NO_WAIT','WAIT_DIE','OCC','MVCC','TIMESTAMP','CALVIN']
     nalgos=['MVCC','OCC','CALVIN']
-    nalgos=['NO_WAIT']
+    nalgos=['NO_WAIT','MVCC']
     nmodes = ["NORMAL_MODE","NOCC_MODE","QRY_ONLY_MODE"]
     nmodes = ["NORMAL_MODE","QRY_ONLY_MODE"]
     nmodes = ["QRY_ONLY_MODE"]
-#nmodes = ["NORMAL_MODE"]
+    nmodes = ["NORMAL_MODE"]
 #    ntif = [50000,100000]
     ntif = [50000,10000,150000,200000,250000,300000]
     ntif = [50000]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.75,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,47.5,50]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.75,2.5,5,7.5,10,12.5,15,17.5,20,25,30,35,40,45,50]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1]
-    ndelay=[0,0.05,0.1,0.5,1,1.5]
-    ndelay=[0,0.1,1]
-    ndelay=[0]
+    ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.5,10,15,20]
+#    ndelay=[0,0.1,1]
     ndelay = [n*1000000 for n in ndelay]
-    nthr = [1,2,3,4]#,5,6]
+    nthr = [6]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY","CORE_CNT"]
 #    exp = [[wl,8,cc,2,d,"false"] for d,cc in itertools.product(ndelay,nalgos)]
 #    fmt = ["WORKLOAD","NODE_CNT","CLIENT_NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY"]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY","CORE_CNT","ACCESS_PERC","MODE","MAX_TXN_IN_FLIGHT","THREAD_CNT"]
-    exp = [[wl,2,cc,2,d,"false",64,0,m,t,thr] for d,cc,m,t,thr in itertools.product(ndelay,nalgos,nmodes,ntif,nthr)]
+    exp = [[wl,8,cc,2,d,"false",64,0,m,t,thr] for d,cc,m,t,thr in itertools.product(ndelay,nalgos,nmodes,ntif,nthr)]
     return fmt,exp
 
 def network_sweep_plot(summary,summary_client,summary_seq):
@@ -649,6 +648,7 @@ def network_sweep_plot(summary,summary_client,summary_seq):
 #    line_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",key='mdly_serv',extras={"MODE":"NORMAL_MODE"})
 #    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT',"MODE":"NORMAL_MODE"})
     tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT'})
+    stacks_setup(summary,nfmt,nexp,x_name="THREAD_CNT",keys=['sthd_prof_1a','sthd_prof_2','sthd_prof_3','sthd_prof_4','sthd_prof_5a','sthd_prof_1b','sthd_prof_5b','sthd_prof_thd',],norm=False)
 
 def network_experiment():
     fmt_nt = ["NODE_CNT","CLIENT_NODE_CNT","NETWORK_TEST"]
@@ -872,9 +872,9 @@ experiment_map = {
 # Default values for variable configurations
 configs = {
     "NODE_CNT" : 16,
-    "THREAD_CNT": 1,#6,
+    "THREAD_CNT": 6,
     "REM_THREAD_CNT": 1,
-    "SEND_THREAD_CNT": 1,
+    "SEND_THREAD_CNT": 4,#1,
     "CLIENT_NODE_CNT" : "NODE_CNT",
     "CLIENT_THREAD_CNT" : 2,
     "CLIENT_REM_THREAD_CNT" : 1,
@@ -909,7 +909,7 @@ configs = {
     "ACCESS_PERC":0.03,
     "DATA_PERC": 100,
     "REQ_PER_QUERY": 10, #16
-    "SYNTH_TABLE_SIZE": "2056",#"2097152*8",
+    "SYNTH_TABLE_SIZE": "2097152*8",
 #TPCC
     "NUM_WH": 'PART_CNT',
     "PERC_PAYMENT":0.0,

@@ -120,9 +120,11 @@ void TxnTable::add_txn(uint64_t node_id, txn_man * txn, base_query * qry) {
 
   if(next_txn == NULL) {
     //t_node = (txn_node_t) mem_allocator.alloc(sizeof(struct txn_node), g_thread_cnt);
+#if CC_ALG == MVCC 
   pthread_mutex_lock(&mtx);
     ts_pool.insert(TsMapPair(txn->get_ts(),NULL));
   pthread_mutex_unlock(&mtx);
+#endif
     txn_table_pool.get(t_node);
     t_node->txn = txn;
     t_node->qry = qry;
@@ -136,10 +138,12 @@ void TxnTable::add_txn(uint64_t node_id, txn_man * txn, base_query * qry) {
   }
   else {
     if(txn->get_ts() != t_node->txn->get_ts()) {
+#if CC_ALG == MVCC
   pthread_mutex_lock(&mtx);
       ts_pool.erase(t_node->txn->get_ts());
       ts_pool.insert(TsMapPair(txn->get_ts(),NULL));
   pthread_mutex_unlock(&mtx);
+#endif
     }
     if(t_node->qry) {
       assert(t_node->qry->batch_id == qry->batch_id);
@@ -228,11 +232,13 @@ void TxnTable::delete_txn(uint64_t node_id, uint64_t txn_id, uint64_t batch_id){
     }
     t_node = t_node->next;
   }
+#if CC_ALG == MVCC
   pthread_mutex_lock(&mtx);
   TsMap::iterator it2 = ts_pool.find(t_node->txn->get_ts());
   if(it2 != ts_pool.end())
     ts_pool.erase(it2);
   pthread_mutex_unlock(&mtx);
+#endif
 
   MODIFY_END(txn_id % pool_size)
 

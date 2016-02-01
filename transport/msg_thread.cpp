@@ -109,7 +109,10 @@ void MessageThread::run() {
   sthd_prof_start = get_sys_clock();
   // This is the end for final RACKs and CL_RSP; delete from txn pool
 #if CC_ALG != CALVIN
-  if((type == RACK && qry->rtype==RFIN) || (type == CL_RSP)) {
+  if(type == RFIN) {
+      qry_pool.put(qry);
+  }
+  else if((type == RACK && qry->rtype==RFIN) || (type == CL_RSP)) {
 #if MODE==SIMPLE_MODE
       // Need to free the original query
       //  that was not placed in txn pool

@@ -733,8 +733,8 @@ def stacks_general(xval,summary,
             try:
 #                print("{} {} -- {} {}".format(k,ki,x,xi))
 #                print(summary[cfgs][k])
-#                data[ki][xi] = avg(summary[cfgs][k])
-                data[ki][xi] = sum(summary[cfgs][k]) / sum(summary[cfgs]['txn_cnt'])
+                data[ki][xi] = avg(summary[cfgs][k])
+#                data[ki][xi] = sum(summary[cfgs][k]) / sum(summary[cfgs]['txn_cnt'])
 #                pp.pprint(data)
                 total += data[ki][xi]
             except KeyError:

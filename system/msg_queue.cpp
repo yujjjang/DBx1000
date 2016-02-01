@@ -4,6 +4,7 @@
 #include "txn_pool.h"
 
 //#define CONCURRENT_QUEUE
+//#define CONCURRENT_QUEUE_RR
 
 void MessageQueue::init() {
   cnt = 0;
@@ -16,7 +17,19 @@ void MessageQueue::init() {
 void MessageQueue::enqueue(base_query * qry,RemReqType type,uint64_t dest, uint64_t tid) {
   msg_entry_t entry;
   msg_pool.get(entry);
-  entry->qry = qry;
+  if(type == RFIN) {
+    base_query * qry2;
+    qry_pool.get(qry2);
+    qry2->pid = qry->pid;
+    qry2->rc = qry->rc;
+    qry2->txn_id = qry->txn_id;
+    qry2->batch_id = qry->batch_id;
+    qry2->ro = qry->ro;
+    qry2->rtype = qry->rtype;
+    entry->qry = qry2;
+  } else {
+    entry->qry = qry;
+  }
   entry->dest = dest;
   entry->type = type;
   entry->next  = NULL;
@@ -38,7 +51,19 @@ void MessageQueue::enqueue(base_query * qry,RemReqType type,uint64_t dest, uint6
 void MessageQueue::enqueue(base_query * qry,RemReqType type,uint64_t dest) {
   msg_entry_t entry;
   msg_pool.get(entry);
-  entry->qry = qry;
+  if(type == RFIN) {
+    base_query * qry2;
+    qry_pool.get(qry2);
+    qry2->pid = qry->pid;
+    qry2->rc = qry->rc;
+    qry2->txn_id = qry->txn_id;
+    qry2->batch_id = qry->batch_id;
+    qry2->ro = qry->ro;
+    qry2->rtype = qry->rtype;
+    entry->qry = qry2;
+  } else {
+    entry->qry = qry;
+  }
   entry->dest = dest;
   entry->type = type;
   entry->next  = NULL;
@@ -62,10 +87,14 @@ uint64_t MessageQueue::dequeue(base_query *& qry, RemReqType & type, uint64_t & 
   msg_entry_t entry;
   uint64_t time;
 #ifdef CONCURRENT_QUEUE
-  //bool r = mq.try_dequeue(entry);
-  // try_dequeue_non_interleaved is slower overall
-  //bool r = mq.try_dequeue_non_interleaved(entry);
-  bool r = mq.try_dequeue_rr(idx++ % g_thread_cnt,entry);
+
+#ifdef CONCURRENT_QUEUE_RR
+  bool r = mq.try_dequeue_rr(idx % g_thread_cnt,entry);
+#else
+  bool r = mq.try_dequeue(idx % g_thread_cnt,entry);
+#endif
+  ATOM_ADD(idx,1);
+
 #else
   pthread_mutex_lock(&mtx);
   LIST_GET_HEAD(head,tail,entry);
@@ -79,7 +108,6 @@ uint64_t MessageQueue::dequeue(base_query *& qry, RemReqType & type, uint64_t & 
     dest = entry->dest;
     time = entry->starttime;
     tid = entry->tid;
-    //printf("deq %ld: %f\n",tid, (float)(time - g_starttime)/ BILLION);
     msg_pool.put(entry);
   } else {
     qry = NULL;

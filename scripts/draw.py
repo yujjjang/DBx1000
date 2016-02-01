@@ -498,7 +498,7 @@ def draw_bars_single(data, xlabels,
 
 
 def draw_stack(data, xlabels, slabels, figname='stack', title=None, figsize=(8, 3),ymin=0, ymax=1,ltitle=''
-        ,legend=False) :
+        ,legend=True) :
     fig = figure(figsize=figsize)
     ind = range(0, len(xlabels))
 
@@ -520,7 +520,7 @@ def draw_stack(data, xlabels, slabels, figname='stack', title=None, figsize=(8, 
     if title:
         plt.title("\n".join(wrap(title)))
     if legend:
-        legend(reversed(plots), tuple(slabels), bbox_to_anchor = (0.38, -0.2, 1, 1), prop={'size':11})
+        fig.legend(reversed(plots), tuple(slabels), bbox_to_anchor = (1, 1, 1, 1), prop={'size':11})
     subplots_adjust(bottom=0.25, right=0.7, top=None)
     savefig('../figs/' + figname + '.pdf', bbox_inches='tight')
     plt.close()
@@ -570,7 +570,7 @@ def draw_bars(data, xlabels,
 
 
 def draw_stack(data, xlabels, slabels, figname='stack', title=None, figsize=(8, 3),ymin=0, ymax=1,ltitle=''
-        ,legend=False) :
+        ,legend=True) :
     fig = figure(figsize=figsize)
     slabels = list(reversed(slabels))
     ind = range(0, len(xlabels))
@@ -593,7 +593,7 @@ def draw_stack(data, xlabels, slabels, figname='stack', title=None, figsize=(8, 
     if title:
         plt.title("\n".join(wrap(title)))
     if legend:
-        legend(reversed(plots), tuple(slabels), bbox_to_anchor = (0.38, -0.2, 1, 1), prop={'size':11})
+        fig.legend(reversed(plots), tuple(slabels), bbox_to_anchor = (0.38,-0.2, 0.5, 1), prop={'size':11})
     subplots_adjust(bottom=0.25, right=0.7, top=None)
     savefig('../figs/' + figname + '.pdf', bbox_inches='tight')
     plt.close()

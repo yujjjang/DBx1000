@@ -6,9 +6,9 @@
 // Simulation + Hardware
 /***********************************************/
 #define NODE_CNT 16
-#define THREAD_CNT 1
+#define THREAD_CNT 6
 #define REM_THREAD_CNT 1
-#define SEND_THREAD_CNT 1
+#define SEND_THREAD_CNT 4
 #define CORE_CNT 64
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
@@ -85,7 +85,7 @@
 // Concurrency Control
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HSTORE, HSTORE_SPEC, VOLTDB, OCC, VLL, CALVIN
-#define CC_ALG NO_WAIT
+#define CC_ALG MVCC
 
 // all transactions acquire tuples according to the primary key order.
 #define KEY_ORDER         false
@@ -159,7 +159,7 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 8
-#define SYNTH_TABLE_SIZE 2056
+#define SYNTH_TABLE_SIZE 2097152*8
 #define ZIPF_THETA 0.6
 #define TXN_WRITE_PERC 0.5
 #define TUP_WRITE_PERC 0.5
@@ -261,7 +261,7 @@ extern TestCases          g_test_case;
 // SIMPLE Immediately send OK back to client
 // NOCC Don't do CC
 // NORMAL normal operation
-#define MODE QRY_ONLY_MODE
+#define MODE NORMAL_MODE
 
 
 /***********************************************/
