@@ -85,7 +85,7 @@
 // Concurrency Control
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HSTORE, HSTORE_SPEC, VOLTDB, OCC, VLL, CALVIN
-#define CC_ALG MVCC
+#define CC_ALG NO_WAIT
 
 // all transactions acquire tuples according to the primary key order.
 #define KEY_ORDER         false

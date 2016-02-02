@@ -6,6 +6,8 @@
 #include "helper.h"
 #include "concurrentqueue.h"
 
+//#define WQ_CONCURRENT_QUEUE
+
 //template<typename T> class ConcurrentQueue;
 class base_query;
 class base_client_query;
@@ -16,6 +18,12 @@ struct wq_entry {
   uint64_t starttime;
   struct wq_entry * next;
   struct wq_entry * prev;
+  void init(base_query * qry, uint64_t time) {
+    this->qry = qry;
+    this->starttime = time;
+    next = NULL;
+    prev = NULL;
+  }
 };
 
 typedef wq_entry * wq_entry_t;
@@ -40,6 +48,20 @@ private:
   uint64_t id_hash_size;
   id_entry_t * id_hash;
   pthread_mutex_t mtx;
+};
+
+class SimpleQueue {
+  public:
+    void init();
+    bool empty();
+    uint64_t get_cnt();
+    wq_entry_t dequeue();
+    void enqueue(wq_entry_t entry);
+  private:
+    pthread_mutex_t mtx;
+    wq_entry_t head;
+    wq_entry_t tail;
+    uint64_t cnt;
 };
 
 // Really a linked list
@@ -105,11 +127,22 @@ public:
 
 
 private:
+#ifdef WQ_CONCURRENT_QUEUE 
   moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> wq;
   moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> new_wq;
   moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> rem_wq;
+#elif CC_ALG == CALVIN
+  moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> wq;
+  moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> new_wq;
+  moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> rem_wq;
+#else
+  SimpleQueue wq;
+  SimpleQueue new_wq;
+  SimpleQueue rem_wq;
+  //SimpleQueue aq;
+#endif
   moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> aq;
-  //moodycamel::ConcurrentQueue<base_query*,moodycamel::ConcurrentQueueDefaultTraits> sched_wq;
+
   base_query * aq_head;
   QWorkQueueHelper * queue;
   QHash * hash;

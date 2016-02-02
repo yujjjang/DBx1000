@@ -619,9 +619,8 @@ def network_sweep():
     nalgos=['NO_WAIT','WAIT_DIE','OCC','MVCC','TIMESTAMP','CALVIN']
     nalgos=['MVCC','OCC','CALVIN']
     nalgos=['NO_WAIT','MVCC']
-    nmodes = ["NORMAL_MODE","NOCC_MODE","QRY_ONLY_MODE"]
-    nmodes = ["NORMAL_MODE","QRY_ONLY_MODE"]
-    nmodes = ["QRY_ONLY_MODE"]
+    nalgos=['WAIT_DIE','OCC','TIMESTAMP','CALVIN']
+    nalgos=['NO_WAIT']
     nmodes = ["NORMAL_MODE"]
 #    ntif = [50000,100000]
     ntif = [50000,10000,150000,200000,250000,300000]
@@ -630,7 +629,8 @@ def network_sweep():
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.75,2.5,5,7.5,10,12.5,15,17.5,20,25,30,35,40,45,50]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1]
     ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.5,10,15,20]
-#    ndelay=[0,0.1,1]
+    ndelay=[0,0.05,0.1,0.25,0.5,0.75,1,1.5,10,15,20,50,100]
+    ndelay=[0,0.1,1]
     ndelay = [n*1000000 for n in ndelay]
     nthr = [6]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PART_PER_TXN","NETWORK_DELAY","SET_AFFINITY","CORE_CNT"]
@@ -647,8 +647,14 @@ def network_sweep_plot(summary,summary_client,summary_seq):
     line_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",key='mdly_serv')
 #    line_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",key='mdly_serv',extras={"MODE":"NORMAL_MODE"})
 #    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT',"MODE":"NORMAL_MODE"})
-    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT'})
-    stacks_setup(summary,nfmt,nexp,x_name="THREAD_CNT",keys=['sthd_prof_1a','sthd_prof_2','sthd_prof_3','sthd_prof_4','sthd_prof_5a','sthd_prof_1b','sthd_prof_5b','sthd_prof_thd',],norm=False)
+
+#    tput_setup(summary,summary_client,summary_seq,nfmt,nexp,x_name="NETWORK_DELAY",v_name="THREAD_CNT",extras={'PART_CNT':'NODE_CNT','CLIENT_NODE_CNT':'NODE_CNT'})
+#    stacks_setup(summary,nfmt,nexp,x_name="THREAD_CNT",keys=['sthd_prof_1a','sthd_prof_2','sthd_prof_3','sthd_prof_4','sthd_prof_5a','sthd_prof_1b','sthd_prof_5b','sthd_prof_thd',],norm=False)
+
+    v_name = "CC_ALG"
+    x_name = "NETWORK_DELAY"
+    x_vals,v_vals,fmt,exp,lst = plot_prep(nexp,nfmt,x_name,v_name)
+    tput(x_vals,v_vals,summary,summary_client,summary_seq,cfg_fmt=fmt,cfg=list(exp),xname=x_name,vname=v_name,title="",name="tput_network",xlab="Network Latency (ms)",logscalex=True)
 
 def network_experiment():
     fmt_nt = ["NODE_CNT","CLIENT_NODE_CNT","NETWORK_TEST"]

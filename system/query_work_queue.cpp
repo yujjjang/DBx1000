@@ -41,6 +41,14 @@ void QWorkQueue::init(workload * wl) {
     sched_head[i] = NULL;
     sched_tail[i] = NULL;
   }
+
+
+#ifndef WQ_CONCURRENT_QUEUE
+  wq.init();
+  new_wq.init();
+  rem_wq.init();
+#endif
+
 }
 
 int inline QWorkQueue::get_idx(int input) {
@@ -60,7 +68,13 @@ void QWorkQueue::abort_finish(uint64_t time) {
 } 
 
 void QWorkQueue::enqueue_new(uint64_t thd_id, base_query * qry) {
+#ifdef WQ_CONCURRENT_QUEUE
     new_wq.enqueue(qry);
+#else
+    wq_entry_t entry = (wq_entry_t) mem_allocator.alloc(sizeof(wq_entry),0);
+    entry->init(qry,get_sys_clock());
+    new_wq.enqueue(entry);
+#endif
 }
 
 void QWorkQueue::sched_enqueue(base_query * qry) {
@@ -224,6 +238,8 @@ void QWorkQueue::enqueue(uint64_t thd_id, base_query * qry,bool busy) {
       || (q_type == 2  && (rtype == RTXN || rtype == RACK))
       );
 #else
+
+#ifdef WQ_CONCURRENT_QUEUE
   switch(PRIORITY) {
     case PRIORITY_FCFS:
       ATOM_ADD(wq_cnt,1);
@@ -261,6 +277,40 @@ void QWorkQueue::enqueue(uint64_t thd_id, base_query * qry,bool busy) {
       break;
     default: assert(false);
   }
+
+#else
+  wq_entry_t entry = (wq_entry_t) mem_allocator.alloc(sizeof(wq_entry),0);
+  entry->init(qry,get_sys_clock());
+  switch(PRIORITY) {
+    case PRIORITY_FCFS:
+      wq.enqueue(entry);
+      break;
+    case PRIORITY_ACTIVE:
+      if(qry->txn_id == UINT64_MAX) {
+        new_wq.enqueue(entry);
+      }
+      else {
+        wq.enqueue(entry);
+        }
+      break;
+    case PRIORITY_HOME:
+      if(qry->txn_id == UINT64_MAX) {
+        new_wq.enqueue(entry);
+      }
+      else if (IS_REMOTE(qry->txn_id)) {
+        rem_wq.enqueue(entry);
+      }
+      else {
+        wq.enqueue(entry);
+      }
+      break;
+    default: assert(false);
+  }
+
+
+#endif
+
+
 #endif
   DEBUG("%ld ENQUEUE (%ld,%ld); %ld; %d, %d,0x%lx\n",thd_id,txn_id,batch_id,return_id,q_type,rtype,(uint64_t)qry);
   INC_STATS(thd_id,all_wq_enqueue,get_sys_clock() - starttime);
@@ -269,7 +319,7 @@ void QWorkQueue::enqueue(uint64_t thd_id, base_query * qry,bool busy) {
 // If we do, maybe add in check as an atomic var in base_query
 // Current hash implementation requires an expensive mutex
 bool QWorkQueue::dequeue(uint64_t thd_id, base_query *& qry) {
-  bool valid;
+  bool valid = false;
   uint64_t prof_starttime = get_sys_clock();
   int q_type __attribute__((unused));
   q_type = 9;
@@ -311,6 +361,8 @@ bool QWorkQueue::dequeue(uint64_t thd_id, base_query *& qry) {
       );
 #else
   uint64_t starttime = prof_starttime;
+
+#ifdef WQ_CONCURRENT_QUEUE
   valid = wq.try_dequeue(qry);
   INC_STATS(thd_id,wq_dequeue,get_sys_clock() - starttime);
   if(valid) {
@@ -336,6 +388,29 @@ bool QWorkQueue::dequeue(uint64_t thd_id, base_query *& qry) {
       }
     }
   }
+
+#else
+  wq_entry_t entry = wq.dequeue();
+  INC_STATS(thd_id,wq_dequeue,get_sys_clock() - starttime);
+  if(entry == NULL && PRIORITY == PRIORITY_HOME) {
+    starttime = get_sys_clock();
+    entry = rem_wq.dequeue();
+    INC_STATS(thd_id,rem_wq_dequeue,get_sys_clock() - starttime);
+  }
+  if(entry == NULL && (PRIORITY == PRIORITY_HOME || PRIORITY == PRIORITY_ACTIVE)) {
+    starttime = get_sys_clock();
+    entry = new_wq.dequeue();
+    INC_STATS(thd_id,new_wq_dequeue,get_sys_clock() - starttime);
+  }
+
+  if(entry) {
+    qry = entry->qry;
+    valid = true;
+    assert(qry != NULL);
+    mem_allocator.free(entry,sizeof(wq_entry));
+  }
+#endif
+  
 #endif
 
 
@@ -865,4 +940,34 @@ base_query * QWorkQueueHelper::get_next_abort_query() {
 
   pthread_mutex_unlock(&mtx);
   return next_qry;
+}
+
+void SimpleQueue::init() {
+  pthread_mutex_init(&mtx,NULL);
+}
+
+bool SimpleQueue::empty() {
+  return head == NULL;
+}
+
+uint64_t SimpleQueue::get_cnt() {
+  return cnt;
+}
+
+wq_entry_t SimpleQueue::dequeue() {
+  wq_entry_t entry = NULL;
+  pthread_mutex_lock(&mtx);
+  LIST_GET_HEAD(head,tail,entry);
+  if(entry != NULL) {
+    --cnt;
+  }
+  pthread_mutex_unlock(&mtx);
+  return entry;
+}
+
+void SimpleQueue::enqueue(wq_entry_t entry) {
+  pthread_mutex_lock(&mtx);
+  LIST_PUT_TAIL(head,tail,entry);
+  ++cnt;
+  pthread_mutex_unlock(&mtx);
 }
